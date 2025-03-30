@@ -1,4 +1,3 @@
-version: '3.8'
 services:
   mysql:
     image: mysql:8.0
@@ -13,31 +12,38 @@ services:
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
-      timeout: 5s
-      retries: 5
+      timeout: 10s
+      retries: 10
+      start_period: 30s
 
   redis:
-    image: redis:7
+    image: redis:7-alpine
     container_name: redis
     ports:
-      - "6380:6379"
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   api:
     build:
       context: .
-      dockerfile: TaskManagement.API/dockerfile
+      dockerfile: TaskManagement.API/Dockerfile
     container_name: api
     depends_on:
       mysql:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     environment:
-      - ASPNETCORE_ENVIRONMENT=Production
-      - ConnectionStrings__TaskManagementConnection=Server=mysql;Database=TaskManagement;User=root;Password=root;
-      - Redis__ConnectionString=redis:6379
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__TaskManagementConnection: "Server=mysql;Database=TaskManagement;User=root;Password=root;"
+      Redis__ConnectionString: "redis:6379"
     ports:
       - "5000:8080"
+    restart: unless-stopped
 
 volumes:
   mysql-data:

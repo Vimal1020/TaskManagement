@@ -20,7 +20,7 @@ RUN dotnet restore "TaskManagement.sln"
 # Copy the rest of the source code
 COPY . .
 
-# Build the API project
+# Build the API project (optional if publish will build it)
 WORKDIR "/src/TaskManagement.API"
 RUN dotnet build "TaskManagement.API.csproj" -c Release -o /app/build
 
