@@ -1,0 +1,235 @@
+openapi: 3.0.1
+info:
+  title: Task Management API
+  version: 1.0.0
+  description: API for managing tasks with JWT authentication
+  contact:
+    name: API Support
+    email: support@taskmanagement.com
+
+servers:
+  - url: /api/v1
+    description: Development server
+
+paths:
+  /tasks:
+    post:
+      tags: [Tasks]
+      summary: Create a new task
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskCreateUpdateDto'
+      responses:
+        '201':
+          description: Task created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponseDto'
+        '400':
+          description: Invalid input
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+
+  /tasks/{id}:
+    get:
+      tags: [Tasks]
+      summary: Get task details by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Task ID
+      responses:
+        '200':
+          description: Task details retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponseDto'
+        '404':
+          description: Task not found
+
+    put:
+      tags: [Tasks]
+      summary: Update task details
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Task ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskCreateUpdateDto'
+      responses:
+        '204':
+          description: Task updated successfully
+        '404':
+          description: Task not found
+
+    delete:
+      tags: [Tasks]
+      summary: Delete a task
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Task ID
+      responses:
+        '204':
+          description: Task deleted successfully
+        '404':
+          description: Task not found
+
+  /tasks/user/{userId}:
+    get:
+      tags: [Tasks]
+      summary: Get tasks assigned to a user
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: User ID
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+          description: Page number
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 100
+          description: Items per page
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/Status'
+          description: Filter by task status
+      responses:
+        '200':
+          description: Paginated tasks list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTasksResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Status:
+      type: string
+      enum:
+        - Pending
+        - InProgress
+        - Completed
+      example: "Pending"
+
+    TaskCreateUpdateDto:
+      type: object
+      required:
+        - title
+        - description
+        - status
+        - assignedUserId
+        - dueDate
+      properties:
+        title:
+          type: string
+          minLength: 3
+          maxLength: 100
+          example: "Implement API"
+        description:
+          type: string
+          maxLength: 1000
+          example: "Complete OpenAPI implementation"
+        status:
+          $ref: '#/components/schemas/Status'
+        assignedUserId:
+          type: integer
+          minimum: 1
+          example: 123
+        dueDate:
+          type: string
+          format: date-time
+          example: "2023-12-31T23:59:59Z"
+
+    TaskResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/TaskCreateUpdateDto'
+        - type: object
+          properties:
+            id:
+              type: integer
+              readOnly: true
+              example: 1
+            createdAt:
+              type: string
+              format: date-time
+              readOnly: true
+              example: "2023-01-01T12:00:00Z"
+
+    PaginatedTasksResponse:
+      type: object
+      required:
+        - items
+        - total
+        - page
+        - pageSize
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/TaskResponseDto'
+        total:
+          type: integer
+          minimum: 0
+          example: 100
+        page:
+          type: integer
+          minimum: 1
+          example: 1
+        pageSize:
+          type: integer
+          minimum: 1
+          maximum: 100
+          example: 10
