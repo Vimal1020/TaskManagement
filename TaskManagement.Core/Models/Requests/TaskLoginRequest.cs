@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace TaskManagement.API.Requests
+namespace TaskManagement.Core.Models.Requests
 {
     public class TaskLoginRequest
     {

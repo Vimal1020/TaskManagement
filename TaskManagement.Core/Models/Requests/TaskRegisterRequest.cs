@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace TaskManagement.API.Models
+namespace TaskManagement.Core.Models.Requests
 {
     public class TaskRegisterRequest
     {

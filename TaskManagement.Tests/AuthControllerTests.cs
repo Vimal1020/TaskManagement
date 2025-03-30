@@ -1,9 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Moq;
 using TaskManagement.API.Controllers;
-using TaskManagement.API.Models;
-using TaskManagement.API.Requests;
 using TaskManagement.Core.Interfaces;
+using TaskManagement.Core.Models.Requests;
 using TaskManagement.Core.Models.Responses;
 
 namespace TaskManagement.Tests
