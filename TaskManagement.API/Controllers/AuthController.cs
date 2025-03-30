@@ -5,17 +5,29 @@ using TaskManagement.Core.Models.Requests;
 
 namespace TaskManagement.API.Controllers
 {
+    /// <summary>
+    /// Controller responsible for handling user authentication operations such as registration and login.
+    /// </summary>
     [ApiController]
     [Route("api/auth")]
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AuthController"/> class.
+        /// </summary>
+        /// <param name="authService">The authentication service.</param>
         public AuthController(IAuthService authService)
         {
             _authService = authService;
         }
 
+        /// <summary>
+        /// Registers a new user with the provided registration details.
+        /// </summary>
+        /// <param name="model">The registration details.</param>
+        /// <returns>An IActionResult with the result of the registration process.</returns>
         [HttpPost("register")]
         [AllowAnonymous]
         public async Task<IActionResult> Register([FromBody] TaskRegisterRequest model)
@@ -29,6 +41,11 @@ namespace TaskManagement.API.Controllers
             return Ok(result);
         }
 
+        /// <summary>
+        /// Authenticates a user and returns a JWT token if the credentials are valid.
+        /// </summary>
+        /// <param name="model">The login credentials.</param>
+        /// <returns>An IActionResult with the authentication result and JWT token.</returns>
         [HttpPost("login")]
         [AllowAnonymous]
         public async Task<IActionResult> Login([FromBody] TaskLoginRequest model)
