@@ -19,11 +19,14 @@ using TaskManagement.Infrastructure.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Use the connection string from configuration (updated for Docker)
 var connectionString = builder.Configuration.GetConnectionString("TaskManagementConnection");
 
+// Configure MySQL using Pomelo (ensure the host is "mysql" when running in Docker)
 builder.Services.AddDbContext<TaskManagementDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 
+// Identity Configuration
 builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
 {
     options.Password.RequiredLength = 8;
@@ -36,6 +39,7 @@ builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
 .AddEntityFrameworkStores<TaskManagementDbContext>()
 .AddDefaultTokenProviders();
 
+// JWT Configuration
 var jwtConfig = builder.Configuration.GetSection("Jwt");
 var key = Encoding.ASCII.GetBytes(jwtConfig["Secret"]!);
 
@@ -43,7 +47,8 @@ builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-}).AddJwtBearer(options =>
+})
+.AddJwtBearer(options =>
 {
     options.TokenValidationParameters = new TokenValidationParameters
     {
@@ -77,19 +82,22 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+// Authorization Policies
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
     options.AddPolicy("ManagerPlus", policy => policy.RequireRole("Admin", "Manager"));
 });
 
-// Application Services
+// Application Services & Dependencies Registration
 builder.Services.AddScoped<ITaskRepository, TaskRepository>();
 builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<ITaskCacheService, RedisTaskCacheService>();
 builder.Services.AddScoped<ITaskController, TasksController>();
-builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
+// Redis Configuration
+// Use the service name "redis" in Docker environment (adjust in your local settings if needed)
 var redisConnectionString = builder.Configuration.GetSection("Redis")["ConnectionString"];
 var redis = ConnectionMultiplexer.Connect(redisConnectionString);
 builder.Services.AddSingleton<IConnectionMultiplexer>(redis);
@@ -99,7 +107,6 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Task Management API", Version = "v1" });
-
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Description = "JWT Authorization header using the Bearer scheme. Example: \"Bearer {token}\"",
@@ -108,7 +115,6 @@ builder.Services.AddSwaggerGen(c =>
         Type = SecuritySchemeType.ApiKey,
         Scheme = "Bearer"
     });
-
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
@@ -125,22 +131,23 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+// Register controllers from the API assembly.
 builder.Services.AddControllers();
 
 var app = builder.Build();
 
-
+// Database Initialization:
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<TaskManagementDbContext>();
     dbContext.Database.EnsureDeleted();
     dbContext.Database.EnsureCreated();
 
-    var services = scope.ServiceProvider;
-    var authService = services.GetRequiredService<AuthService>();
+    var authService = scope.ServiceProvider.GetRequiredService<IAuthService>();
     await authService.InitializeRolesAsync();
 }
 
+// Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
