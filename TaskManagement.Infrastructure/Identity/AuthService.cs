@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -11,30 +10,13 @@ using TaskManagement.Core.Models.Responses;
 
 namespace TaskManagement.Infrastructure.Identity
 {
-    public class AuthService : IAuthService
+    public class AuthService(UserManager<ApplicationUser> userManager, RoleManager<ApplicationRole> roleManager, IConfiguration _configuration) : IAuthService
     {
-        private readonly UserManager<ApplicationUser> _userManager;
-        private readonly RoleManager<ApplicationRole> _roleManager;
-        private readonly IConfiguration _configuration;
-        private readonly ILogger<AuthService> _logger;
-
-        public AuthService(
-            UserManager<ApplicationUser> userManager,
-            RoleManager<ApplicationRole> roleManager,
-            IConfiguration configuration,
-            ILogger<AuthService> logger)
-        {
-            _userManager = userManager;
-            _roleManager = roleManager;
-            _configuration = configuration;
-            _logger = logger;
-        }
-
         public async Task<AuthResponse> RegisterAsync(string email, string password, string firstName,
             string lastName, string role = "User")
         {
             // Validate input
-            if (await _userManager.FindByEmailAsync(email) != null)
+            if (await userManager.FindByEmailAsync(email) != null)
             {
                 throw new InvalidOperationException("User already exists");
             }
@@ -49,32 +31,32 @@ namespace TaskManagement.Infrastructure.Identity
                 CreatedAt = DateTimeOffset.UtcNow
             };
 
-            var result = await _userManager.CreateAsync(user, password);
+            var result = await userManager.CreateAsync(user, password);
             if (!result.Succeeded)
             {
                 throw new InvalidOperationException(
                     string.Join(", ", result.Errors.Select(e => e.Description)));
             }
 
-            if (!await _roleManager.RoleExistsAsync(role))
+            if (!await roleManager.RoleExistsAsync(role))
             {
                 var newRole = new ApplicationRole
                 {
                     Name = role,
                     Description = $"{role} role"
                 };
-                await _roleManager.CreateAsync(newRole);
+                await roleManager.CreateAsync(newRole);
             }
 
-            await _userManager.AddToRoleAsync(user, role);
+            await userManager.AddToRoleAsync(user, role);
 
             return await GenerateAuthResult(user);
         }
 
         public async Task<AuthResponse> LoginAsync(string email, string password)
         {
-            var user = await _userManager.FindByEmailAsync(email);
-            if (user == null || !await _userManager.CheckPasswordAsync(user, password))
+            var user = await userManager.FindByEmailAsync(email);
+            if (user == null || !await userManager.CheckPasswordAsync(user, password))
             {
                 throw new UnauthorizedAccessException("Invalid credentials");
             }
@@ -85,16 +67,16 @@ namespace TaskManagement.Infrastructure.Identity
         private async Task<AuthResponse> GenerateAuthResult(ApplicationUser user)
         {
             var claims = new List<Claim>
-    {
-        new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-        new Claim(JwtRegisteredClaimNames.Email, user.Email),
-        new Claim("firstName", user.FirstName),
-        new Claim("lastName", user.LastName)
-    };
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim(JwtRegisteredClaimNames.Email, user.Email),
+                new Claim("firstName", user.FirstName),
+                new Claim("lastName", user.LastName)
+            };
 
             // Add roles
-            var roles = await _userManager.GetRolesAsync(user);
+            var roles = await userManager.GetRolesAsync(user);
             claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 
 
@@ -124,9 +106,9 @@ namespace TaskManagement.Infrastructure.Identity
         {
             foreach (var roleName in new[] { "Admin", "Manager", "User" })
             {
-                if (!await _roleManager.RoleExistsAsync(roleName))
+                if (!await roleManager.RoleExistsAsync(roleName))
                 {
-                    await _roleManager.CreateAsync(new ApplicationRole
+                    await roleManager.CreateAsync(new ApplicationRole
                     {
                         Name = roleName,
                         Description = $"{roleName} role"

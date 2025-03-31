@@ -5,31 +5,17 @@ using TaskManagement.Core.Models.Responses;
 
 namespace TaskManagement.API.Middleware
 {
-    public class ErrorHandlingMiddleware
+    public class ErrorHandlingMiddleware(RequestDelegate next, ILogger<ErrorHandlingMiddleware> logger, IHostEnvironment env)
     {
-        private readonly RequestDelegate _next;
-        private readonly ILogger<ErrorHandlingMiddleware> _logger;
-        private readonly IHostEnvironment _env;
-
-        public ErrorHandlingMiddleware(
-            RequestDelegate next,
-            ILogger<ErrorHandlingMiddleware> logger,
-            IHostEnvironment env)
-        {
-            _next = next;
-            _logger = logger;
-            _env = env;
-        }
-
         public async Task InvokeAsync(HttpContext context)
         {
             try
             {
-                await _next(context);
+                await next(context);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An unhandled exception has occurred");
+                logger.LogError(ex, "An unhandled exception has occurred");
                 await HandleExceptionAsync(context, ex);
             }
         }
@@ -66,7 +52,7 @@ namespace TaskManagement.API.Middleware
                 Detail = exception.Message
             };
 
-            if (_env.IsDevelopment())
+            if (env.IsDevelopment())
             {
                 response.Detail = exception.ToString();
                 response.StackTrace = exception.StackTrace;

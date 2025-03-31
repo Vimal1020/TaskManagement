@@ -1,0 +1,337 @@
+{
+	"info": {
+		"_postman_id": "5eee07a8-c693-49ab-bf1a-a27bc37385d7",
+		"name": "Docker-TaskManagement",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "25676329"
+	},
+	"item": [
+		{
+			"name": "Register",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Basic status check\r",
+							"pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));\r",
+							"\r",
+							"try {\r",
+							"    const data = pm.response.json();\r",
+							"    \r",
+							"    if (data.token) {\r",
+							"        // Save token as environment variable\r",
+							"        pm.environment.set(\"TOKEN\", data.token);\r",
+							"        console.log(\"Token saved successfully\");\r",
+							"    } else {\r",
+							"        console.log(\"Token not found in response\");\r",
+							"    }\r",
+							"} catch (error) {\r",
+							"    console.log(\"Error parsing response\");\r",
+							"}"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n           \"email\": \"testdocker@example.com\",\n           \"firstName\": \"Test\",\n           \"lastName\": \"Docker\",\n           \"password\": \"TestForDocker@10\",\n           \"role\": \"Admin\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5000/api/auth/register",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"auth",
+						"register"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Login",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Parse the response body as JSON\r",
+							"const responseData = pm.response.json();\r",
+							"\r",
+							"// Check if the token exists (adjust the key if necessary)\r",
+							"if (responseData.token) {\r",
+							"    // Save the token into an environment variable called 'TOKEN'\r",
+							"    pm.environment.set(\"TOKEN\", responseData.token);\r",
+							"    console.log(\"Token captured:\", responseData.token);\r",
+							"} else {\r",
+							"    console.error(\"Token not found in response.\");\r",
+							"}"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n           \"email\": \"testdocker@example.com\",\n           \"password\": \"TestForDocker@10\"\n         }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5000/api/auth/login",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"auth",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create Task",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer $TOKEN"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n           \"title\": \"New Task\",\n           \"description\": \"This is a new task created via curl\",\n           \"status\": 1,\n           \"assignedUserId\": 1,\n           \"dueDate\": \"2025-12-31T23:59:59Z\"\n         }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5000/api/tasks",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"tasks"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get a Task by ID",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{TOKEN}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:5000/api/tasks/1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"tasks",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update an Existing Task",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer {{TOKEN}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n           \"title\": \"Updated Task Title\",\n           \"description\": \"Updated description\",\n           \"status\": 2,\n           \"assignedUserId\": 1,\n           \"dueDate\": \"2025-12-31T23:59:59Z\"\n         }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5000/api/tasks/1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"tasks",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete Task",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{TOKEN}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:5000/api/tasks/1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"tasks",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Tasks for a Specific User",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{TOKEN}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:5000/api/tasks/user/1?page=1&pageSize=10",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"tasks",
+						"user",
+						"1"
+					],
+					"query": [
+						{
+							"key": "page",
+							"value": "1"
+						},
+						{
+							"key": "pageSize",
+							"value": "10"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Tasks by User with Search Term",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{TOKEN}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:5000/api/tasks/user/search/1?pageNumber=1&pageSize=10&searchTerm=Task",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"tasks",
+						"user",
+						"search",
+						"1"
+					],
+					"query": [
+						{
+							"key": "pageNumber",
+							"value": "1"
+						},
+						{
+							"key": "pageSize",
+							"value": "10"
+						},
+						{
+							"key": "searchTerm",
+							"value": "Task"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

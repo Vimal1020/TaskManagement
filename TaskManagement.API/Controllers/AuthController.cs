@@ -10,19 +10,8 @@ namespace TaskManagement.API.Controllers
     /// </summary>
     [ApiController]
     [Route("api/auth")]
-    public class AuthController : ControllerBase
+    public class AuthController(IAuthService authService) : ControllerBase
     {
-        private readonly IAuthService _authService;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="AuthController"/> class.
-        /// </summary>
-        /// <param name="authService">The authentication service.</param>
-        public AuthController(IAuthService authService)
-        {
-            _authService = authService;
-        }
-
         /// <summary>
         /// Registers a new user with the provided registration details.
         /// </summary>
@@ -32,7 +21,7 @@ namespace TaskManagement.API.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> Register([FromBody] TaskRegisterRequest model)
         {
-            var result = await _authService.RegisterAsync(
+            var result = await authService.RegisterAsync(
                 model.Email,
                 model.Password,
                 model.FirstName,
@@ -50,7 +39,7 @@ namespace TaskManagement.API.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> Login([FromBody] TaskLoginRequest model)
         {
-            var result = await _authService.LoginAsync(model.Email, model.Password);
+            var result = await authService.LoginAsync(model.Email, model.Password);
             return Ok(result);
         }
     }

@@ -19,7 +19,6 @@ using TaskManagement.Infrastructure.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Use the connection string from configuration (updated for Docker)
 var connectionString = builder.Configuration.GetConnectionString("TaskManagementConnection");
 
 // Configure MySQL using Pomelo (ensure the host is "mysql" when running in Docker)
@@ -54,10 +53,8 @@ builder.Services.AddAuthentication(options =>
     {
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(key),
-        ValidateIssuer = true,
-        ValidIssuer = jwtConfig["Issuer"],
-        ValidateAudience = true,
-        ValidAudience = jwtConfig["Audience"],
+        ValidateIssuer = false,
+        ValidateAudience = false,
         ValidateLifetime = true,
         ClockSkew = TimeSpan.Zero,
         NameClaimType = ClaimTypes.NameIdentifier,
@@ -97,7 +94,6 @@ builder.Services.AddScoped<ITaskController, TasksController>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
 // Redis Configuration
-// Use the service name "redis" in Docker environment (adjust in your local settings if needed)
 var redisConnectionString = builder.Configuration.GetSection("Redis")["ConnectionString"];
 var redis = ConnectionMultiplexer.Connect(redisConnectionString);
 builder.Services.AddSingleton<IConnectionMultiplexer>(redis);
@@ -131,7 +127,6 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// Register controllers from the API assembly.
 builder.Services.AddControllers();
 
 var app = builder.Build();

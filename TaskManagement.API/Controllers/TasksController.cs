@@ -11,27 +11,20 @@ namespace TaskManagement.API.Controllers
     [Authorize]
     [ApiController]
     [Route("api/tasks")]
-    public class TasksController : ControllerBase, ITaskController
+    public class TasksController(ITaskService taskService) : ControllerBase, ITaskController
     {
-        private readonly ITaskService _taskService;
-
-        public TasksController(ITaskService taskService)
-        {
-            _taskService = taskService;
-        }
-
         /// <summary>
         /// Create a new task.
         /// POST: api/tasks
-        /// Accessible by: Admin, Manager, User
+        /// Accessible by: Admin only (using "AdminOnly" policy)
         /// </summary>
-        [Authorize(Roles = "Admin")]
+        [Authorize(Policy = "AdminOnly")]
         [HttpPost]
         public async Task<TaskResponseDto> TasksPOSTAsync([FromBody] TaskCreateUpdateDto body)
         {
             var domainTask = TaskMappingHelper.MapToDomain(body);
             domainTask.AssignedUserId = User.GetUserId();
-            var createdTask = await _taskService.CreateTaskAsync(domainTask, domainTask.AssignedUserId);
+            var createdTask = await taskService.CreateTaskAsync(domainTask, domainTask.AssignedUserId);
             return TaskMappingHelper.MapToDto(createdTask);
         }
 
@@ -40,11 +33,10 @@ namespace TaskManagement.API.Controllers
         /// GET: api/tasks/{id}
         /// Accessible by: Admin, Manager, User
         /// </summary>
-        [Authorize(Roles = "Admin,Manager,User")]
         [HttpGet("{id}")]
         public async Task<TaskResponseDto> TasksGETAsync(int id)
         {
-            var task = await _taskService.GetTaskByIdAsync(id)
+            var task = await taskService.GetTaskByIdAsync(id)
                 ?? throw new KeyNotFoundException("Task not found");
             return TaskMappingHelper.MapToDto(task);
         }
@@ -52,16 +44,16 @@ namespace TaskManagement.API.Controllers
         /// <summary>
         /// Update an existing task.
         /// PUT: api/tasks/{id}
-        /// Accessible by: Admin, Manager
+        /// Accessible by: Admin and Manager
         /// </summary>
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Policy = "ManagerPlus")]
         [HttpPut("{id}")]
         public async Task TasksPUTAsync(int id, [FromBody] TaskCreateUpdateDto body)
         {
             var domainTask = TaskMappingHelper.MapToDomain(body);
             domainTask.AssignedUserId = User.GetUserId();
 
-            var updated = await _taskService.UpdateTaskAsync(id, domainTask, domainTask.AssignedUserId);
+            var updated = await taskService.UpdateTaskAsync(id, domainTask, domainTask.AssignedUserId);
             if (!updated) throw new KeyNotFoundException("Task not found");
         }
 
@@ -70,20 +62,20 @@ namespace TaskManagement.API.Controllers
         /// DELETE: api/tasks/{id}
         /// Accessible by: Admin only
         /// </summary>
-        [Authorize(Roles = "Admin")]
+        [Authorize(Policy = "AdminOnly")]
         [HttpDelete("{id}")]
         public async Task TasksDELETEAsync(int id)
         {
-            var deleted = await _taskService.DeleteTaskAsync(id, User.GetUserId());
+            var deleted = await taskService.DeleteTaskAsync(id, User.GetUserId());
             if (!deleted) throw new KeyNotFoundException("Task not found");
         }
 
         /// <summary>
         /// Retrieve tasks for a specific user with pagination and optional status filter.
         /// GET: api/tasks/user/{userId}?page=1&pageSize=10&status=Active
-        /// Accessible by: Admin, Manager, User
+        /// Accessible by: Admin, Manager, User (default authorization)
         /// </summary>
-        [Authorize(Roles = "Admin,Manager,User")]
+        
         [HttpGet("user/{userId}")]
         public async Task<PaginatedTasksResponse> UserAsync(
             int userId,
@@ -95,7 +87,7 @@ namespace TaskManagement.API.Controllers
                 ? (TaskStatusEnum)Enum.Parse(typeof(TaskStatusEnum), status.Value.ToString())
                 : null;
 
-            var result = await _taskService.GetUserTasksAsync(userId, page, pageSize, domainStatus);
+            var result = await taskService.GetUserTasksAsync(userId, page, pageSize, domainStatus);
 
             return new PaginatedTasksResponse
             {
@@ -111,7 +103,6 @@ namespace TaskManagement.API.Controllers
         /// GET: api/tasks/user/search/{userId}?pageNumber=1&pageSize=10&searchTerm=keyword
         /// Accessible by: Admin, Manager, User
         /// </summary>
-        [Authorize(Roles = "Admin,Manager,User")]
         [HttpGet("user/search/{userId}")]
         public async Task<List<TaskResponseDto>> GetTasksByUser(
             int userId,
@@ -119,7 +110,7 @@ namespace TaskManagement.API.Controllers
             [FromQuery] int pageSize = 10,
             [FromQuery] string searchTerm = null)
         {
-            var tasks = await _taskService.GetTasksByUser(userId, pageNumber, pageSize, searchTerm);
+            var tasks = await taskService.GetTasksByUser(userId, pageNumber, pageSize, searchTerm);
             return tasks.Select(TaskMappingHelper.MapToDto).ToList();
         }
     }
