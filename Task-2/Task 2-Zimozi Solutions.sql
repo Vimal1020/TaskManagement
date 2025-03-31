@@ -158,57 +158,89 @@ GO
 -- Task Queries
 --------------------------------------------------------
 -- 1. Get all tasks assigned to a user(Rahul) (paginated & filterable by status, due date).
-DECLARE @UserId INT = 1, @Status NVARCHAR(50) = 'Pending';
+DECLARE @UserId INT = 1,
+        @Status NVARCHAR(50) = 'Pending',
+        @DueDateFrom DATETIME2 = NULL,
+        @DueDateTo DATETIME2 = NULL,
+        @PageNumber INT = 1,
+        @PageSize INT = 10;
+
 SELECT t.Id, t.Title, t.Status, t.DueDate 
 FROM Tasks t
 JOIN UserTasks ut ON t.Id = ut.TaskId
-WHERE ut.UserId = @UserId AND t.Status = @Status;
+WHERE ut.UserId = @UserId 
+AND (@Status IS NULL OR t.Status = @Status)
+AND (@DueDateFrom IS NULL OR t.DueDate >= @DueDateFrom)
+AND (@DueDateTo IS NULL OR t.DueDate <= @DueDateTo)
+ORDER BY t.DueDate
+OFFSET (@PageNumber - 1) * @PageSize ROWS
+FETCH NEXT @PageSize ROWS ONLY;
 
 
 -- 2. Get a task’s full history (status changes, comments, notifications)
+-- 2. Get a task’s full history (status changes, comments, notifications)
 DECLARE @TaskId INT = 1;
-SELECT 
-    'Status' AS EventType, 
-    th.ChangedAt AS Timestamp,
-    u.UserName AS ChangedBy,
-    th.OldStatus,
-    th.NewStatus,
-    NULL AS Comment
-FROM TaskHistory th
-JOIN Users u ON th.ChangedByUserId = u.Id
-WHERE th.TaskId = @TaskId
-
-UNION ALL
 
 SELECT 
-    'Comment' AS EventType,
-    tc.CreatedAt,
-    u.UserName AS CommentBy,
-    NULL,
-    NULL,
-    tc.CommentText
-FROM TaskComments tc
-JOIN Users u ON tc.UserId = u.Id
-WHERE tc.TaskId = @TaskId
+    EventType, 
+    Timestamp,
+    ChangedBy,
+    OldStatus,
+    NewStatus,
+    Comment,
+    Message
+FROM (
+    SELECT 
+        'Status' AS EventType, 
+        th.ChangedAt AS Timestamp,
+        u.UserName AS ChangedBy,
+        th.OldStatus,
+        th.NewStatus,
+        NULL AS Comment,
+        NULL AS Message
+    FROM TaskHistory th
+    JOIN Users u ON th.ChangedByUserId = u.Id
+    WHERE th.TaskId = @TaskId
+    UNION ALL
+    SELECT 
+        'Comment' AS EventType,
+        tc.CreatedAt,
+        u.UserName,
+        NULL,
+        NULL,
+        tc.CommentText,
+        NULL
+    FROM TaskComments tc
+    JOIN Users u ON tc.UserId = u.Id
+    WHERE tc.TaskId = @TaskId
+
+    UNION ALL
+
+    SELECT 
+        'Notification' AS EventType,
+        n.CreatedAt,
+        u.UserName,
+        NULL,
+        NULL,
+        NULL,
+        n.Message
+    FROM Notifications n
+    JOIN Users u ON n.UserId = u.Id
+    WHERE n.TaskId = @TaskId
+) AS History
 ORDER BY Timestamp DESC;
 
 -- 3. Get users who interacted with a specific task (commented, updated status)
-SELECT DISTINCT u.Id, u.UserName, 'Assignee' AS Role
-FROM UserTasks ut
-JOIN Users u ON ut.UserId = u.Id
-WHERE ut.TaskId = 1
 
-UNION
-
-SELECT DISTINCT u.Id, u.UserName, 'Commenter'
+SELECT DISTINCT u.Id, u.UserName, 'Commenter' AS InteractionType
 FROM TaskComments tc
 JOIN Users u ON tc.UserId = u.Id
-WHERE tc.TaskId = 1
+WHERE tc.TaskId = @TaskId
 
 UNION
 
 SELECT DISTINCT u.Id, u.UserName, 'Status Changer'
 FROM TaskHistory th
 JOIN Users u ON th.ChangedByUserId = u.Id
-WHERE th.TaskId = 1;
+WHERE th.TaskId = @TaskId;
 GO

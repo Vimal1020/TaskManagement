@@ -84,8 +84,6 @@ namespace TaskManagement.Infrastructure.Identity
                 Encoding.UTF8.GetBytes(_configuration["Jwt:Secret"]));
 
             var token = new JwtSecurityToken(
-                issuer: _configuration["Jwt:Issuer"],
-                audience: _configuration["Jwt:Audience"],
                 claims: claims,
                 expires: DateTime.UtcNow.AddMinutes(
                     double.Parse(_configuration["Jwt:ExpireMinutes"])),

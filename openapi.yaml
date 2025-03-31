@@ -5,7 +5,7 @@ info:
   description: API for managing tasks with JWT authentication
   contact:
     name: API Support
-    email: support@taskmanagement.com
+    email: vimal@test.com
 
 servers:
   - url: /api/v1
