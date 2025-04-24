@@ -90,23 +90,21 @@ jobs:
       - name: Restore Bundle project
         run: dotnet restore ${{ env.BUNDLE_PROJECT }}
 
-      # Build only packable projects
+      # Build only the API project
       - name: Build API project
         run: dotnet build TaskManagement.API/TaskManagement.API.csproj --configuration Release --no-restore
 
-      - name: Build Bundle project
-        run: dotnet build ${{ env.BUNDLE_PROJECT }} --configuration Release --no-restore --no-build
-
-      # Pack outputs
+      # Pack API project (skip build since it's already built)
       - name: Pack API project
         run: |
           dotnet pack TaskManagement.API/TaskManagement.API.csproj \
             --configuration Release --no-build --output ./nupkg
 
+      # Pack Bundle project (no explicit build step)
       - name: Pack Bundle project
         run: |
           dotnet pack ${{ env.BUNDLE_PROJECT }} \
-            --configuration Release --no-build --output ./nupkg
+            --configuration Release --output ./nupkg
 
       - name: Publish NuGet packages
         run: |
