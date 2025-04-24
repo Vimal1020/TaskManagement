@@ -83,12 +83,10 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Restore dependencies
-        run: |
-          dotnet restore TaskManagement.API/TaskManagement.API.csproj
-          dotnet restore ${{ env.BUNDLE_PROJECT }}
+      - name: Restore all projects
+        run: dotnet restore ${{ env.SOLUTION_FILE }}
 
-      - name: Build solution
+      - name: Build all projects
         run: dotnet build ${{ env.SOLUTION_FILE }} --configuration Release --no-restore
 
       - name: Pack API project
@@ -106,3 +104,6 @@ jobs:
           dotnet nuget push ./nupkg/*.nupkg \
             --source "https://nuget.pkg.github.com/Vimal1020/index.json" \
             --api-key ${{ secrets.GITHUB_TOKEN }}
+
+# Reminder: ensure each project you intend to pack has <IsPackable>true</IsPackable> in its .csproj
+# (e.g., inside <PropertyGroup>).</text
