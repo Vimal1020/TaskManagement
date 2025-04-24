@@ -11,6 +11,7 @@ env:
   DOTNET_VERSION: '8.0.x'
   DOCKERFILE_PATH: './TaskManagement.API/Dockerfile'
   BUNDLE_PROJECT: 'TaskManagement.Bundle.csproj'
+  SOLUTION_FILE: 'TaskManagement.sln'
 
 permissions:
   contents: read
@@ -29,13 +30,13 @@ jobs:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Restore dependencies
-        run: dotnet restore
+        run: dotnet restore ${{ env.SOLUTION_FILE }}
 
       - name: Build solution
-        run: dotnet build --configuration Release --no-restore
+        run: dotnet build ${{ env.SOLUTION_FILE }} --configuration Release --no-restore
 
       - name: Run tests
-        run: dotnet test --configuration Release --no-build --verbosity normal
+        run: dotnet test ${{ env.SOLUTION_FILE }} --configuration Release --no-build --verbosity normal
 
   docker-build-push:
     runs-on: ubuntu-latest
@@ -83,10 +84,10 @@ jobs:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Restore dependencies
-        run: dotnet restore
+        run: dotnet restore ${{ env.SOLUTION_FILE }}
 
       - name: Build solution
-        run: dotnet build --configuration Release --no-restore
+        run: dotnet build ${{ env.SOLUTION_FILE }} --configuration Release --no-restore
 
       - name: Pack API project
         run: |
