@@ -84,7 +84,9 @@ jobs:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Restore dependencies
-        run: dotnet restore ${{ env.SOLUTION_FILE }}
+        run: |
+          dotnet restore TaskManagement.API/TaskManagement.API.csproj
+          dotnet restore ${{ env.BUNDLE_PROJECT }}
 
       - name: Build solution
         run: dotnet build ${{ env.SOLUTION_FILE }} --configuration Release --no-restore
