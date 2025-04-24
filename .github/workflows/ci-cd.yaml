@@ -85,17 +85,14 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      # Ensure all artifacts exist
       - name: Restore & build solution
         run: |
           dotnet restore ${{ env.SOLUTION_FILE }}
           dotnet build   ${{ env.SOLUTION_FILE }} --configuration Release --no-restore
 
-      # Option A: Explicitly restore the bundle project before packing
       - name: Restore Bundle project
         run: dotnet restore ${{ env.BUNDLE_PROJECT }}
 
-      # Pack the Bundle (no build)
       - name: Pack Bundle project
         run: |
           dotnet pack ${{ env.BUNDLE_PROJECT }} \
@@ -103,9 +100,9 @@ jobs:
             --no-build \
             --output ./nupkg
 
-      # Publish the bundle NuGet package
       - name: Publish NuGet package
         run: |
           dotnet nuget push ./nupkg/*.nupkg \
             --source "https://nuget.pkg.github.com/Vimal1020/index.json" \
-            --api-key ${{ secrets.GH_PAT }}
+            --api-key ${{ secrets.GH_PAT }} \
+            --skip-duplicate
