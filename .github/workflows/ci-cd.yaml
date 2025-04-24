@@ -83,24 +83,21 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Restore all projects via solution
-        run: dotnet restore ${{ env.SOLUTION_FILE }}
+      # Restore only packable projects (exclude tests)
+      - name: Restore API project
+        run: dotnet restore TaskManagement.API/TaskManagement.API.csproj
 
-      - name: Build all projects via solution
-        run: dotnet build ${{ env.SOLUTION_FILE }} --configuration Release --no-restore
+      - name: Restore Bundle project
+        run: dotnet restore ${{ env.BUNDLE_PROJECT }}
 
-      - name: Restore API project explicitly
-        run: |
-          dotnet restore TaskManagement.API/TaskManagement.API.csproj
-
-      - name: Restore Bundle project explicitly
-        run: |
-          dotnet restore ${{ env.BUNDLE_PROJECT }}
+      # Build only packable projects
+      - name: Build API project
+        run: dotnet build TaskManagement.API/TaskManagement.API.csproj --configuration Release --no-restore
 
       - name: Build Bundle project
-        run: |
-          dotnet build ${{ env.BUNDLE_PROJECT }} --configuration Release --no-restore
+        run: dotnet build ${{ env.BUNDLE_PROJECT }} --configuration Release --no-restore
 
+      # Pack outputs
       - name: Pack API project
         run: |
           dotnet pack TaskManagement.API/TaskManagement.API.csproj \
@@ -111,10 +108,8 @@ jobs:
           dotnet pack ${{ env.BUNDLE_PROJECT }} \
             --configuration Release --no-build --output ./nupkg
 
-      - name: Publish NuGet packages to GitHub Packages
+      - name: Publish NuGet packages
         run: |
           dotnet nuget push ./nupkg/*.nupkg \
             --source "https://nuget.pkg.github.com/Vimal1020/index.json" \
             --api-key ${{ secrets.GITHUB_TOKEN }}
-
-# Reminder: ensure <IsPackable>true</IsPackable> in each packable project's .csproj <PropertyGroup>.
