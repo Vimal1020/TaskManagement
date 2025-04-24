@@ -115,4 +115,4 @@ jobs:
         run: |
           dotnet nuget push ./nupkg/*.nupkg \
             --source "https://nuget.pkg.github.com/Vimal1020/index.json" \
-            --api-key ${{ secrets.GITHUB_TOKEN }}
+            --api-key ${{ secrets.GH_PAT }}
